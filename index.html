@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Downloader versi Zikri</title>
+  <style>
+    body {
+      margin: 0; padding: 0; font-family: Arial, sans-serif; color: #fff;
+      text-align: center; overflow-x: hidden;
+    }
+    #bg-video {
+      position: fixed; right: 0; bottom: 0;
+      min-width: 100%; min-height: 100%; object-fit: cover; z-index: -1;
+    }
+    .container {
+      background: rgba(0,0,0,0.65); padding: 20px; margin: 40px auto;
+      border-radius: 15px; width: 90%; max-width: 400px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    h2 { color: yellow; margin-bottom: 15px; }
+    input, select {
+      width: 100%; padding: 10px; margin-bottom: 15px;
+      border: none; border-radius: 10px;
+    }
+    button {
+      width: 100%; padding: 12px; margin: 6px 0; border: none;
+      border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px;
+    }
+    .download-btn { background: linear-gradient(to right,#ff0080,#7928ca); color:#fff; }
+    .foto-btn { background: linear-gradient(to right,#00c6ff,#0072ff); color:#fff; }
+    .musik-btn { background: linear-gradient(to right,#ff512f,#dd2476); color:#fff; }
+    .toggle-btn { background:#28a745; color:#fff; }
+
+    /* Area preview foto live */
+    #foto-live-preview {
+      margin-top:15px; display:none; flex-direction:column; align-items:center;
+    }
+    #foto-canvas { border:2px solid #fff; border-radius:10px; max-width:90%; }
+  </style>
+</head>
+<body>
+  <video autoplay muted loop id="bg-video">
+    <source src="https://files.catbox.moe/paawkz.mp4" type="video/mp4">
+  </video>
+
+  <div class="container">
+    <h2>Downloader versi Zikri</h2>
+    <input type="text" id="link" placeholder="Tempel tautan TikTok di sini">
+    <button class="download-btn" onclick="downloadVideo()">Download Video</button>
+
+    <select id="durasi">
+      <option value="3">Foto Live 3 detik</option>
+      <option value="4">Foto Live 4 detik</option>
+      <option value="5">Foto Live 5 detik</option>
+    </select>
+    <button class="foto-btn" onclick="downloadFoto()">Download Foto Live</button>
+
+    <button class="musik-btn" onclick="downloadMusik()">Download Musik</button>
+    <button class="toggle-btn" onclick="toggleSuara()">ON / OFF Suara</button>
+
+    <!-- Preview foto live -->
+    <div id="foto-live-preview">
+      <h3>Foto Live Preview</h3>
+      <canvas id="foto-canvas" width="300" height="300"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const bgVideo = document.getElementById("bg-video");
+    const canvas = document.getElementById("foto-canvas");
+    const ctx = canvas.getContext("2d");
+    let liveFrames = [];
+    let currentFrame = 0;
+    let liveInterval = null;
+
+    async function fetchTikTokData(url) {
+      if(!url){ alert("⚠️ Tempel dulu tautan TikTok!"); return null; }
+      try {
+        const res = await fetch("https://www.tikwm.com/api/?url="+encodeURIComponent(url));
+        const data = await res.json();
+        if(data.code===0){ return data.data; }
+        else { alert("❌ Gagal mengambil data!"); return null; }
+      } catch(e){
+        alert("❌ Error koneksi API!");
+        return null;
+      }
+    }
+
+    async function downloadVideo(){
+      const url=document.getElementById("link").value;
+      const data=await fetchTikTokData(url);
+      if(data){ window.open(data.play,"_blank"); }
+    }
+
+    async function downloadMusik(){
+      const url=document.getElementById("link").value;
+      const data=await fetchTikTokData(url);
+      if(data){ window.open(data.music,"_blank"); }
+    }
+
+    async function downloadFoto(){
+      const url=document.getElementById("link").value;
+      const durasi=document.getElementById("durasi").value;
+      const data=await fetchTikTokData(url);
+      if(!data) return;
+
+      // Ambil cover saja untuk simulasi
+      const cover=data.cover;
+      // Buat beberapa frame duplikat untuk simulasi animasi
+      liveFrames=[cover,cover,cover];
+      showFotoLive(durasi);
+    }
+
+    function showFotoLive(durasi){
+      const preview=document.getElementById("foto-live-preview");
+      preview.style.display="flex";
+      currentFrame=0;
+      if(liveInterval){ clearInterval(liveInterval); }
+
+      const img=new Image();
+      img.crossOrigin="anonymous";
+      img.src=liveFrames[0];
+      img.onload=()=>{
+        // Jalankan loop: tampilkan gambar selama durasi lalu ulang
+        liveInterval=setInterval(()=>{
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0,canvas.width,canvas.height);
+          currentFrame=(currentFrame+1)%liveFrames.length;
+        },1000/(durasi)); // semakin besar durasi, semakin lambat
+      };
+      alert(`📸 Foto Live ${durasi} detik diputar berulang.`);
+    }
+
+    function toggleSuara(){
+      if(bgVideo.muted){ bgVideo.muted=false; alert("🔊 Suara dihidupkan"); }
+      else{ bgVideo.muted=true; alert("🔇 Suara dimatikan"); }
+    }
+  </script>
+</body>
+</html>
